@@ -19,6 +19,8 @@ class ProductFormScreen extends Screen
      */
     public function query(Product $product): iterable
     {
+        $product->load('attachment');
+
         return [
             'product' => $product,
         ];
@@ -65,13 +67,19 @@ class ProductFormScreen extends Screen
      * @param Product $product
      * @return RedirectResponse
      */
-    public function updateOrCreate(Request $request, Product $product): RedirectResponse
+    public function updateOrCreate(Request $request): RedirectResponse
     {
         $data = $request->get('product');
 
-        $product->exists
-            ? $product->update($data)
-            : Product::create($data);
+        $product = Product::updateOrCreate(
+            ['id' => $data['id']],
+            $data
+        );
+
+        $product->attachment()
+            ->syncWithoutDetaching(
+                $data['attachment'] ?? []
+            );
 
         return redirect()
                 ->route('platform.products');
